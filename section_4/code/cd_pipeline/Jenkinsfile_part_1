@@ -1,48 +1,60 @@
-#!/usr/bin/groovy
-
 pipeline {
     agent any
+
     options {
         disableConcurrentBuilds()
     }
 
-    stages {
+    environment {
+        // Define Docker tool in the environment
+        DOCKER_TOOL = 'docker'
+    }
 
+    tools {
+        // Specify Docker tool using the defined environment variable
+        env.DOCKER_TOOL 'org.jenkinsci.plugins.docker.commons.tools.DockerTool'
+    }
+
+    stages {
         stage("Build") {
-            steps { buildApp() }
-		}
+            steps {
+                script {
+                    buildApp()
+                }
+            }
+        }
 
         stage("Deploy - Dev") {
-            steps { deploy('dev') }
-		}
-
-	}
+            steps {
+                script {
+                    deploy('dev')
+                }
+            }
+        }
+    }
 }
 
-
-// steps
 def buildApp() {
-	dir ('section_4/code/cd_pipeline' ) {
-		def appImage = docker.build("hands-on-jenkins/myapp:${BUILD_NUMBER}")
-	}
+    dir('section_4/code/cd_pipeline') {
+        // Use the Docker tool explicitly in the build step
+        sh "${env.DOCKER_TOOL} build -t hands-on-jenkins/myapp:${BUILD_NUMBER} ."
+    }
 }
 
 def deploy(environment) {
+    def containerName = ''
+    def port = ''
 
-	def containerName = ''
-	def port = ''
+    if (environment == 'dev') {
+        containerName = "app_dev"
+        port = "8888"
+    } else {
+        println "Environment not valid"
+        System.exit(0)
+    }
 
-	if ("${environment}" == 'dev') {
-		containerName = "app_dev"
-		port = "8888"
-	} 
-	else {
-		println "Environment not valid"
-		System.exit(0)
-	}
-
-	sh "docker ps -f name=${containerName} -q | xargs --no-run-if-empty docker stop"
-	sh "docker ps -a -f name=${containerName} -q | xargs -r docker rm"
-	sh "docker run -d -p ${port}:5000 --name ${containerName} hands-on-jenkins/myapp:${BUILD_NUMBER}"
-
+    // Use the Docker tool explicitly in the deploy steps
+    sh "${env.DOCKER_TOOL} ps -f name=${containerName} -q | xargs --no-run-if-empty ${env.DOCKER_TOOL} stop"
+    sh "${env.DOCKER_TOOL} ps -a -f name=${containerName} -q | xargs -r ${env.DOCKER_TOOL} rm"
+    sh "${env.DOCKER_TOOL} run -d -p ${port}:5000 --name ${containerName} hands-on-jenkins/myapp:${BUILD_NUMBER}"
 }
