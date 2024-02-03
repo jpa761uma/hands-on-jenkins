@@ -6,13 +6,13 @@ pipeline {
     }
 
     environment {
-        // Define Docker tool in the environment
-        DOCKER_TOOL = 'docker'
+        // Correctly set Docker tool in the environment
+        DOCKER_TOOL = 'org.jenkinsci.plugins.docker.commons.tools.DockerTool'
     }
 
     tools {
         // Specify Docker tool using the defined environment variable
-        env.DOCKER_TOOL 'org.jenkinsci.plugins.docker.commons.tools.DockerTool'
+        env.DOCKER_TOOL 'docker'
     }
 
     stages {
