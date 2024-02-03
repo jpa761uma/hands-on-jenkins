@@ -26,7 +26,7 @@ pipeline {
 
 def buildApp() {
     dir('section_4\\code\\cd_pipeline') {
-        bat 'docker build -t hands-on-jenkins/myapp:%BUILD_NUMBER% .'
+		def appImage = docker.build("hands-on-jenkins/myapp:${BUILD_NUMBER}")
     }
 }
 
