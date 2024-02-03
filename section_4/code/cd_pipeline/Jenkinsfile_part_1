@@ -1,3 +1,5 @@
+#!/usr/bin/groovy
+
 pipeline {
     agent any
 
@@ -6,43 +8,42 @@ pipeline {
     }
 
     stages {
+
         stage("Build") {
-            steps {
-                script {
-                    buildApp()
-                }
-            }
-        }
+            steps { buildApp() }
+		}
 
         stage("Deploy - Dev") {
-            steps {
-                script {
-                    deploy('dev')
-                }
-            }
-        }
-    }
+            steps { deploy('dev') }
+		}
+
+	}
 }
 
+
+// steps
 def buildApp() {
-    dir('section_4\\code\\cd_pipeline') {
+	dir ('section_4/code/cd_pipeline' ) {
 		def appImage = docker.build("hands-on-jenkins/myapp:${BUILD_NUMBER}")
-    }
+	}
 }
 
 def deploy(environment) {
-    def containerName = ''
-    def port = ''
 
-    if (environment == 'dev') {
-        containerName = 'app_dev'
-        port = '8888'
-    } else {
-        echo 'Environment not valid'
-        error 'Invalid environment'
-    }
+	def containerName = ''
+	def port = ''
 
-    bat "docker ps -f name=${containerName} -q | %{$_ -replace \"`,.*\",\"\"} | ForEach-Object { docker stop $_ }"
-    bat "docker ps -a -f name=${containerName} -q | %{$_ -replace \"`,.*\",\"\"} | ForEach-Object { docker rm $_ }"
-    bat "docker run -d -p ${port}:5000 --name ${containerName} hands-on-jenkins/myapp:%BUILD_NUMBER%"
+	if ("${environment}" == 'dev') {
+		containerName = "app_dev"
+		port = "8888"
+	} 
+	else {
+		println "Environment not valid"
+		System.exit(0)
+	}
+
+	sh "docker ps -f name=${containerName} -q | xargs --no-run-if-empty docker stop"
+	sh "docker ps -a -f name=${containerName} -q | xargs -r docker rm"
+	sh "docker run -d -p ${port}:5000 --name ${containerName} hands-on-jenkins/myapp:${BUILD_NUMBER}"
+
 }
